@@ -26,3 +26,14 @@ def test_calculate_gpa_weighted_by_credits():
     ]
     # (4.0*5 + 3.0*3) / 8 = 3.625 -> 3.62
     assert calculate_gpa(courses) == 3.62
+
+
+def test_custom_grading_scale():
+    from gpa import GradingScale
+
+    pass_fail = GradingScale(name="Pass/Fail", bands=((50, "P", 4.0), (0, "F", 0.0)))
+    courses = [
+        {"name": "Art", "credits": 2, "score": 60},  # P -> 4.0
+        {"name": "Music", "credits": 2, "score": 40},  # F -> 0.0
+    ]
+    assert calculate_gpa(courses, pass_fail) == 2.0

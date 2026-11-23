@@ -1,63 +1,63 @@
-"""Core GPA calculation logic (4.0 scale, KBTU-style letter grades)."""
+"""Core GPA calculation logic.
+
+The grading scale is a Strategy: a GradingScale object holds the bands
+(min score -> letter -> points). calculate_gpa() uses whatever scale it is
+given, so a new scale can be added without changing the calculation code.
+"""
+from dataclasses import dataclass
 
 
-def score_to_letter(score):
-    if score >= 95:
-        return "A"
-    elif score >= 90:
-        return "A-"
-    elif score >= 85:
-        return "B+"
-    elif score >= 80:
-        return "B"
-    elif score >= 75:
-        return "B-"
-    elif score >= 70:
-        return "C+"
-    elif score >= 65:
-        return "C"
-    elif score >= 60:
-        return "C-"
-    elif score >= 55:
-        return "D+"
-    elif score >= 50:
-        return "D"
-    else:
-        return "F"
+@dataclass(frozen=True)
+class GradingScale:
+    name: str
+    # (min_score, letter, points), ordered from highest to lowest
+    bands: tuple[tuple[float, str, float], ...]
 
+    def letter(self, score: float) -> str:
+        for min_score, letter, _ in self.bands:
+            if score >= min_score:
+                return letter
+        return self.bands[-1][1]
 
-def letter_to_points(letter):
-    if letter == "A":
-        return 4.0
-    elif letter == "A-":
-        return 3.67
-    elif letter == "B+":
-        return 3.33
-    elif letter == "B":
-        return 3.0
-    elif letter == "B-":
-        return 2.67
-    elif letter == "C+":
-        return 2.33
-    elif letter == "C":
-        return 2.0
-    elif letter == "C-":
-        return 1.67
-    elif letter == "D+":
-        return 1.33
-    elif letter == "D":
-        return 1.0
-    else:
+    def points(self, letter: str) -> float:
+        for _, band_letter, points in self.bands:
+            if band_letter == letter:
+                return points
         return 0.0
 
 
-def calculate_gpa(courses):
+KBTU_SCALE = GradingScale(
+    name="KBTU 4.0",
+    bands=(
+        (95, "A", 4.0),
+        (90, "A-", 3.67),
+        (85, "B+", 3.33),
+        (80, "B", 3.0),
+        (75, "B-", 2.67),
+        (70, "C+", 2.33),
+        (65, "C", 2.0),
+        (60, "C-", 1.67),
+        (55, "D+", 1.33),
+        (50, "D", 1.0),
+        (0, "F", 0.0),
+    ),
+)
+
+
+def score_to_letter(score: float, scale: GradingScale = KBTU_SCALE) -> str:
+    return scale.letter(score)
+
+
+def letter_to_points(letter: str, scale: GradingScale = KBTU_SCALE) -> float:
+    return scale.points(letter)
+
+
+def calculate_gpa(courses: list[dict], scale: GradingScale = KBTU_SCALE) -> float:
     """courses: list of dicts {"name": str, "credits": int, "score": float}"""
-    total_points = 0
+    total_points = 0.0
     total_credits = 0
     for c in courses:
-        letter = score_to_letter(c["score"])
-        points = letter_to_points(letter)
+        points = scale.points(scale.letter(c["score"]))
         total_points += points * c["credits"]
         total_credits += c["credits"]
     return round(total_points / total_credits, 2)
