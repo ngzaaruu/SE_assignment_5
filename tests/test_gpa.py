@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from gpa import calculate_gpa, letter_to_points, score_to_letter  # noqa: E402
@@ -37,3 +39,21 @@ def test_custom_grading_scale():
         {"name": "Music", "credits": 2, "score": 40},  # F -> 0.0
     ]
     assert calculate_gpa(courses, pass_fail) == 2.0
+
+
+# --- Task 07: tests for risks R1 and R2 ---
+def test_empty_courses_gives_clear_error():  # R1
+    with pytest.raises(ValueError, match="No courses"):
+        calculate_gpa([])
+
+
+@pytest.mark.parametrize("bad_score", [150, -5, float("inf"), float("nan")])
+def test_invalid_score_is_rejected(bad_score):  # R2
+    with pytest.raises(ValueError, match="Score"):
+        calculate_gpa([{"name": "X", "credits": 3, "score": bad_score}])
+
+
+@pytest.mark.parametrize("bad_credits", [0, -3])
+def test_invalid_credits_are_rejected(bad_credits):  # R2
+    with pytest.raises(ValueError, match="Credits"):
+        calculate_gpa([{"name": "X", "credits": bad_credits, "score": 90}])
