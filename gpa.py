@@ -4,6 +4,7 @@ The grading scale is a Strategy: a GradingScale object holds the bands
 (min score -> letter -> points). calculate_gpa() uses whatever scale it is
 given, so a new scale can be added without changing the calculation code.
 """
+import math
 from dataclasses import dataclass
 
 
@@ -52,11 +53,22 @@ def letter_to_points(letter: str, scale: GradingScale = KBTU_SCALE) -> float:
     return scale.points(letter)
 
 
+def validate_course(score: float, credits: int) -> None:
+    """Raise ValueError if a score or credits value is not allowed (risk R2)."""
+    if not math.isfinite(score) or not 0 <= score <= 100:
+        raise ValueError("Score must be between 0 and 100.")
+    if type(credits) is not int or credits <= 0:
+        raise ValueError("Credits must be a whole number greater than 0.")
+
+
 def calculate_gpa(courses: list[dict], scale: GradingScale = KBTU_SCALE) -> float:
     """courses: list of dicts {"name": str, "credits": int, "score": float}"""
+    if not courses:
+        raise ValueError("No courses yet. Add a course first.")  # risk R1
     total_points = 0.0
     total_credits = 0
     for c in courses:
+        validate_course(c["score"], c["credits"])
         points = scale.points(scale.letter(c["score"]))
         total_points += points * c["credits"]
         total_credits += c["credits"]

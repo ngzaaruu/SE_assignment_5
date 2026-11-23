@@ -1,7 +1,7 @@
 """Console entry point for the GPA calculator."""
 import json
 
-from gpa import calculate_gpa, score_to_letter
+from gpa import calculate_gpa, score_to_letter, validate_course
 
 DATA_FILE = "courses.json"
 
@@ -26,8 +26,13 @@ def main():
         choice = input("> ")
         if choice == "1":
             name = input("Course name: ")
-            credits = int(input("Credits: "))
-            score = float(input("Score (0-100): "))
+            try:
+                credits = int(input("Credits: "))
+                score = float(input("Score (0-100): "))
+                validate_course(score, credits)
+            except ValueError as e:
+                print("Not added:", e)
+                continue
             courses.append({"name": name, "credits": credits, "score": score})
             save_courses(courses)
             print("Added.")
@@ -35,7 +40,10 @@ def main():
             for c in courses:
                 print(f"{c['name']}: {c['score']} ({score_to_letter(c['score'])}), {c['credits']} cr")
         elif choice == "3":
-            print("GPA:", calculate_gpa(courses))
+            try:
+                print("GPA:", calculate_gpa(courses))
+            except ValueError as e:
+                print(e)
         elif choice == "4":
             break
 
